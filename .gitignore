@@ -1,0 +1,31 @@
+# Model weights / checkpoints
+*.pt
+*.pth
+*.bin
+*.safetensors
+checkpoint-*/
+models/
+hf_cache/
+
+# Private / research data
+data/
+outputs/
+*.xlsx
+*.xls
+
+# Secrets
+.env
+token
+stored_tokens
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs / temporary files
+*.log
+*.partial.csv
+.ipynb_checkpoints/
+.DS_Store

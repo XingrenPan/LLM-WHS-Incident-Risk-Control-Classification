@@ -1,0 +1,1001 @@
+{
+  "version": "mining_pathway_control_guardrails_v2+manual_handling_patch",
+  "created_for": "Report 8 v3.2 application-safe multi-control recommendation API",
+  "purpose": "Deterministic mining-context guardrails applied after Risk Top-K scoring and before downstream Control recommendation. When a high-confidence pathway is detected, the API can use the pathway's preferred Risk context for Control selection and mark the result as provisional/reviewable. The UI should continue to display a unified 'Recommended Control' label and should not expose internal taxonomy/generated origin flags.",
+  "ui_policy": {
+    "frontend_label": "Recommended Control",
+    "ui_should_display_origin": false,
+    "do_not_show_to_client": [
+      "origin_flag",
+      "origin_label",
+      "taxonomy_backed",
+      "official_control_category_is_null",
+      "guardrail_triggered",
+      "taxonomy_missing",
+      "generated_fallback_used"
+    ]
+  },
+  "origin_flags": {
+    "0": "taxonomy_backed: recommendation is based on an existing source Control Category / definition",
+    "1": "generated_measure: recommendation is generated from hazard-pathway reasoning without a matched source category",
+    "2": "hybrid: source category is used but the practical control wording or rationale is generated/supplemented",
+    "9": "review_only: evidence is insufficient or Risk/Control context is unsafe for automatic recommendation"
+  },
+  "matching_policy": {
+    "case_sensitive": false,
+    "text_fields_to_match": [
+      "description",
+      "location"
+    ],
+    "rule_selection": "highest_priority_matching_rule",
+    "minimum_confidence_for_override": "high",
+    "default_action": "use_model_top1_risk_for_control_selection",
+    "on_high_confidence_match": {
+      "risk_for_control_selection": "preferred_risk",
+      "override_applied": true,
+      "provisional": true,
+      "review_status": "review",
+      "review_priority": "medium"
+    },
+    "priority_note": "Higher priority rules should be evaluated first. Geotechnical/ground-failure rules intentionally have higher priority than vehicle rules because pit-edge vehicle cases are often primarily ground-control hazards."
+  },
+  "rules": [
+    {
+      "pathway_id": "geotechnical_ground_failure",
+      "priority": 100,
+      "preferred_risk": "Geotechnical / Ground Failure",
+      "confidence": "high",
+      "include_any": [
+        "ground failure",
+        "geotechnical",
+        "pit edge",
+        "open pit edge",
+        "unstable edge",
+        "cracks near the edge",
+        "cracked haul road",
+        "crack near the edge",
+        "wall failure",
+        "bench failure",
+        "slope failure",
+        "subsidence",
+        "void",
+        "sinkhole",
+        "highwall",
+        "low wall",
+        "haul road edge",
+        "edge of an open pit"
+      ],
+      "exclude_any": [],
+      "hazard_factors": [
+        "unstable ground or pit edge",
+        "cracking, wall/slope movement, or reduced ground integrity",
+        "worker or vehicle exposure near the unstable area"
+      ],
+      "desired_control_functions": [
+        "isolation_access_control",
+        "inspection_maintenance",
+        "engineering_environmental_control",
+        "administrative_procedure",
+        "warning_signage"
+      ],
+      "overall_control_logic_statement": "In this geotechnical or ground-failure scenario, one control may prevent access to the unstable area, another may require geotechnical inspection or monitoring, and another may redirect vehicle or pedestrian movement away from the affected edge.",
+      "generated_fallback_controls": [
+        {
+          "control_text": "Establish an exclusion zone around the cracked or unstable ground area",
+          "control_function": "isolation_access_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this geotechnical or ground-failure scenario, the unstable ground or pit-edge condition creates an exposure pathway for workers or vehicles. Establishing an exclusion zone keeps people and equipment away from the affected area until it is assessed and controlled."
+        },
+        {
+          "control_text": "Request geotechnical inspection before work or vehicle access continues",
+          "control_function": "inspection_maintenance",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this geotechnical or ground-failure scenario, cracking or edge instability should be treated as a potential loss of ground integrity. Geotechnical inspection verifies whether the area is safe before work or vehicle movement continues."
+        },
+        {
+          "control_text": "Redirect vehicle or pedestrian movement away from the pit edge or unstable haul-road section",
+          "control_function": "administrative_procedure",
+          "control_role": "primary_or_supporting",
+          "priority": "high",
+          "supporting_event_statement_template": "In this geotechnical or ground-failure scenario, continuing traffic close to the unstable edge maintains exposure. Redirecting movement removes workers and vehicles from the immediate failure pathway."
+        },
+        {
+          "control_text": "Use barriers, bunding, or physical separation to prevent access to the edge",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary_or_supporting",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this geotechnical or ground-failure scenario, barriers or bunding provide physical separation from the unstable edge and reduce the likelihood of accidental entry into the hazardous area."
+        }
+      ]
+    },
+    {
+      "pathway_id": "hot_work_fire",
+      "priority": 96,
+      "preferred_risk": "Non Process Fire & Explosion",
+      "confidence": "high",
+      "include_any": [
+        "hot work",
+        "welding",
+        "weld",
+        "sparks",
+        "spark",
+        "combustible",
+        "flammable",
+        "fire watch",
+        "grinding",
+        "cutting",
+        "ignition",
+        "burning",
+        "packaging materials",
+        "stored materials",
+        "fire extinguisher",
+        "welding work",
+        "sparks from the hot work",
+        "combustible packaging materials"
+      ],
+      "exclude_any": [],
+      "hazard_factors": [
+        "ignition source from welding, cutting, grinding, or hot work",
+        "combustible or flammable material nearby",
+        "potential fire spread or explosion consequence"
+      ],
+      "desired_control_functions": [
+        "hazard_source_control",
+        "administrative_procedure",
+        "engineering_environmental_control",
+        "isolation_access_control",
+        "emergency_response",
+        "inspection_maintenance"
+      ],
+      "overall_control_logic_statement": "In this hot-work fire scenario, one control may remove combustible materials from the ignition area, another may control the hot-work process through permits and supervision, and another may provide fire watch or emergency response if ignition occurs.",
+      "taxonomy_preferred_keywords": [
+        "HOT WORK",
+        "FIRE",
+        "EXPLOSION",
+        "PERMIT",
+        "CRISIS",
+        "EMERGENCY",
+        "COMBUSTIBLE",
+        "IGNITION"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Remove or isolate combustible materials from the hot-work area",
+          "control_function": "hazard_source_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this hot-work fire scenario, combustible materials near welding or sparks create an ignition pathway. Removing or isolating combustibles controls the fuel source."
+        },
+        {
+          "control_text": "Apply a hot-work permit and verify pre-start fire controls",
+          "control_function": "administrative_procedure",
+          "control_role": "primary_or_supporting",
+          "priority": "high",
+          "supporting_event_statement_template": "In this hot-work fire scenario, a hot-work permit and pre-start checks verify that ignition sources, combustible materials, and fire controls are managed before work begins."
+        },
+        {
+          "control_text": "Use fire watch and suitable fire-extinguishing equipment during and after hot work",
+          "control_function": "emergency_response",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this hot-work fire scenario, fire watch and extinguishing equipment reduce the consequence if sparks ignite nearby materials."
+        },
+        {
+          "control_text": "Use welding screens, spark containment, or barriers to prevent ignition spread",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary_or_supporting",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this hot-work fire scenario, spark containment or barriers reduce the chance that sparks reach combustible materials outside the immediate work area."
+        }
+      ],
+      "matching_note": "This rule should take precedence when welding/hot-work/sparks and combustible or flammable materials are present."
+    },
+    {
+      "pathway_id": "fall_from_height",
+      "priority": 95,
+      "preferred_risk": "Fall from height",
+      "confidence": "high",
+      "include_any": [
+        "fall from height",
+        "working at height",
+        "work at height",
+        "elevated platform",
+        "open edge",
+        "edge protection",
+        "safety harness",
+        "fall arrest",
+        "fall restraint",
+        "lanyard",
+        "scaffold",
+        "scaffolding",
+        "ladder",
+        "portable ladder",
+        "lost balance",
+        "before falling",
+        "near an edge",
+        "platform edge",
+        "work platform",
+        "elevated work area",
+        "unguarded edge",
+        "anchor point",
+        "height work"
+      ],
+      "exclude_any": [
+        "dropped from",
+        "dropped object",
+        "dropped tool",
+        "falling object",
+        "landed close",
+        "landed near",
+        "materials can fall",
+        "object fell",
+        "overhead work",
+        "people below",
+        "spanner was dropped",
+        "tool dropped",
+        "tools or materials can fall",
+        "worker below"
+      ],
+      "hazard_factors": [
+        "worker exposure to an elevated edge or work-at-height area",
+        "missing, incomplete, or ineffective fall prevention",
+        "potential fall trajectory to a lower level"
+      ],
+      "desired_control_functions": [
+        "engineering_environmental_control",
+        "isolation_access_control",
+        "ppe_personal_protection",
+        "administrative_procedure",
+        "inspection_maintenance"
+      ],
+      "overall_control_logic_statement": "In this fall-from-height scenario, one control may prevent access to an exposed edge, another may provide physical fall prevention or fall arrest, and another may ensure work-at-height planning, inspection, and supervision are in place.",
+      "taxonomy_preferred_keywords": [
+        "SCAFF",
+        "LADDER",
+        "FALL",
+        "HEIGHT",
+        "EDGE",
+        "ROPE",
+        "HARNESS",
+        "PORTABLE LADDERS"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Install or verify edge protection around the elevated work area",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this fall-from-height scenario, the open edge or elevated platform creates a direct fall pathway. Installing or verifying edge protection reduces the chance that a worker can reach or fall from the edge."
+        },
+        {
+          "control_text": "Ensure the worker is correctly attached to an approved fall-arrest or restraint system",
+          "control_function": "ppe_personal_protection",
+          "control_role": "primary_or_supporting",
+          "priority": "high",
+          "supporting_event_statement_template": "In this fall-from-height scenario, the worker was exposed while working near an elevated edge. Correct attachment to an approved fall-arrest or restraint system reduces the consequence or likelihood of a fall."
+        },
+        {
+          "control_text": "Restrict access to the open-edge area until fall-prevention controls are confirmed",
+          "control_function": "isolation_access_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this fall-from-height scenario, restricting access prevents workers from entering the exposed edge area until edge protection, anchorage, or other fall-prevention controls are confirmed."
+        },
+        {
+          "control_text": "Review work-at-height permit, supervision, and pre-start checks",
+          "control_function": "administrative_procedure",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this fall-from-height scenario, work-at-height planning and supervision help verify that fall-prevention controls are in place before the task starts and remain effective during the work."
+        },
+        {
+          "control_text": "Inspect the platform, access equipment, and anchorage points before work continues",
+          "control_function": "inspection_maintenance",
+          "control_role": "primary_or_supporting",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this fall-from-height scenario, inspection of the platform, access equipment, and anchorage points helps detect missing, damaged, or unsuitable controls before further exposure occurs."
+        }
+      ],
+      "matching_note": "This rule should capture worker fall exposure, not dropped-object exposure. If the event describes a tool/material falling from height and people below, use dropped_object instead."
+    },
+    {
+      "pathway_id": "manual_handling_ergonomics",
+      "priority": 93,
+      "preferred_risk": "Manual Handling / Ergonomics",
+      "secondary_risk": null,
+      "confidence": "high",
+      "include_any": [
+        "manual handling",
+        "manually lifting",
+        "manual lifting",
+        "manual lift",
+        "manually lifted",
+        "lifting manually",
+        "lifted manually",
+        "strained lower back",
+        "strained back",
+        "back strain",
+        "lower back strain",
+        "sprained back",
+        "ergonomic",
+        "ergonomics",
+        "without mechanical assistance",
+        "without using mechanical assistance",
+        "heavy component without mechanical assistance",
+        "heavy pump component without using mechanical assistance",
+        "musculoskeletal",
+        "overexertion",
+        "awkward posture",
+        "repetitive lifting"
+      ],
+      "exclude_any": [
+        "crane",
+        "sling",
+        "suspended load",
+        "load swung",
+        "swinging load",
+        "lifting plant",
+        "lifting equipment",
+        "rigging",
+        "dogman",
+        "forklift",
+        "telehandler"
+      ],
+      "hazard_factors": [
+        "manual force applied to a heavy or awkward load",
+        "worker exposure to musculoskeletal strain or ergonomic overload",
+        "lack of mechanical assistance, task redesign, or team-lift control"
+      ],
+      "desired_control_functions": [
+        "engineering_environmental_control",
+        "administrative_procedure",
+        "fitness_competency",
+        "inspection_maintenance"
+      ],
+      "overall_control_logic_statement": "In this manual-handling or ergonomics scenario, one control may reduce the physical load through mechanical assistance or task redesign, another may limit exposure through team lifting or work planning, and another may verify worker capability, training, and ergonomic risk assessment before the task continues.",
+      "taxonomy_preferred_keywords": [
+        "MANUAL",
+        "ERGONOMIC",
+        "ERGONOMICS",
+        "MECHANICAL ASSIST",
+        "LIFTING AID",
+        "HEAVY",
+        "FITNESS",
+        "COMPETENCY",
+        "TRAINING",
+        "MATERIAL HANDLING"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Use a mechanical lifting aid or handling device for the heavy component",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this manual-handling scenario, the worker was exposed to physical strain while handling a heavy component. A mechanical lifting aid reduces the manual force required."
+        },
+        {
+          "control_text": "Redesign the task to reduce load weight, reach distance, or awkward posture",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary_or_supporting",
+          "priority": "high",
+          "supporting_event_statement_template": "In this manual-handling scenario, redesigning the task reduces ergonomic overload by limiting heavy force, awkward posture, or extended reach."
+        },
+        {
+          "control_text": "Use a team lift or planned handling method when mechanical assistance is not available",
+          "control_function": "administrative_procedure",
+          "control_role": "primary_or_supporting",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this manual-handling scenario, a planned team lift or safe handling method reduces individual load and improves coordination during the task."
+        },
+        {
+          "control_text": "Complete a manual-handling risk assessment before lifting heavy or awkward components",
+          "control_function": "administrative_procedure",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this manual-handling scenario, a risk assessment identifies the need for mechanical assistance, task redesign, team lifting, or additional supervision before work continues."
+        },
+        {
+          "control_text": "Verify worker training and fitness for manual-handling tasks",
+          "control_function": "fitness_competency",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this manual-handling scenario, worker training and fitness checks support safe manual-handling technique and help prevent recurrence of strain injuries."
+        }
+      ]
+    },
+    {
+      "pathway_id": "dropped_object",
+      "priority": 90,
+      "preferred_risk": "Dropped / Falling Object",
+      "confidence": "high",
+      "include_any": [
+        "dropped object",
+        "falling object",
+        "dropped from",
+        "fell from",
+        "spanner was dropped",
+        "tool dropped",
+        "object fell",
+        "worker below",
+        "people below",
+        "overhead work",
+        "platform above",
+        "material fell",
+        "unsecured tool",
+        "dropped tool"
+      ],
+      "exclude_any": [
+        "combustible",
+        "cutting",
+        "fire extinguisher",
+        "fire watch",
+        "flammable",
+        "grinding",
+        "hot work",
+        "ignition",
+        "packaging materials",
+        "spark",
+        "sparks",
+        "stored materials",
+        "weld",
+        "welding"
+      ],
+      "hazard_factors": [
+        "object or material at height",
+        "object falling or potential to fall",
+        "people exposed below or nearby"
+      ],
+      "desired_control_functions": [
+        "hazard_source_control",
+        "isolation_access_control",
+        "engineering_environmental_control",
+        "inspection_maintenance",
+        "administrative_procedure",
+        "ppe_personal_protection"
+      ],
+      "overall_control_logic_statement": "In this dropped-object scenario, one control may prevent the object from falling by securing tools or materials at height, another may prevent worker exposure by establishing an exclusion zone below overhead work, and another may verify ongoing effectiveness through inspection of dropped-object controls.",
+      "taxonomy_preferred_keywords": [
+        "DROPPED",
+        "FALLING",
+        "WALKWAYS",
+        "DEMARCATE",
+        "SCAFF",
+        "LADDERS",
+        "NON-STRUCTURAL"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Secure tools and materials at height using tethering, containment, or tool lanyards",
+          "control_function": "hazard_source_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this dropped-object scenario, the immediate hazard is a tool or material that can fall from height. Securing items at height reduces the chance that they can drop into the work area below."
+        },
+        {
+          "control_text": "Establish and demarcate an exclusion zone below overhead work",
+          "control_function": "isolation_access_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this dropped-object scenario, workers below are exposed to falling tools or materials. An exclusion zone keeps people away from the drop zone while overhead work continues."
+        },
+        {
+          "control_text": "Inspect dropped-object prevention controls before and during work at height",
+          "control_function": "inspection_maintenance",
+          "control_role": "primary_or_supporting",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this dropped-object scenario, inspection verifies that tool tethering, containment, toe boards, and other dropped-object controls remain effective during the task."
+        },
+        {
+          "control_text": "Use barricading, signage, and communication to control access below the work area",
+          "control_function": "administrative_procedure",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this dropped-object scenario, barricading, signage, and communication support exclusion-zone control by warning workers before they enter the area below overhead work."
+        }
+      ],
+      "matching_note": "This rule should capture physical objects/tools/materials falling from height. Sparks or hot-work ignition scenarios should be routed to hot_work_fire."
+    },
+    {
+      "pathway_id": "confined_space",
+      "priority": 90,
+      "preferred_risk": "Confined Space",
+      "confidence": "high",
+      "include_any": [
+        "confined space",
+        "entered a tank",
+        "tank entry",
+        "vessel entry",
+        "inside a tank",
+        "gas testing",
+        "atmospheric testing",
+        "low oxygen",
+        "oxygen alarm",
+        "gas alarm",
+        "ventilation",
+        "standby person",
+        "rescue plan",
+        "entry permit",
+        "manhole"
+      ],
+      "exclude_any": [],
+      "hazard_factors": [
+        "entry into enclosed or partially enclosed space",
+        "atmospheric hazard such as low oxygen or toxic gas",
+        "need for entry control, monitoring, and rescue readiness"
+      ],
+      "desired_control_functions": [
+        "inspection_maintenance",
+        "administrative_procedure",
+        "engineering_environmental_control",
+        "isolation_access_control",
+        "emergency_response",
+        "ppe_personal_protection"
+      ],
+      "overall_control_logic_statement": "In this confined-space scenario, one control may verify atmospheric safety through gas testing and monitoring, another may control entry through permits and isolation, and another may provide emergency readiness through standby and rescue arrangements.",
+      "taxonomy_preferred_keywords": [
+        "GAS DETECTION",
+        "MONITORING",
+        "CONFINED",
+        "POSITIVE ISOLATION",
+        "EGRESS",
+        "DECONTAMINATION",
+        "CRISIS"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Complete atmospheric gas testing and continuous monitoring before and during entry",
+          "control_function": "inspection_maintenance",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this confined-space scenario, the low-oxygen or gas hazard must be verified before and during entry. Gas testing and continuous monitoring confirm whether the atmosphere is safe for workers."
+        },
+        {
+          "control_text": "Use a confined-space entry permit with standby and rescue arrangements",
+          "control_function": "administrative_procedure",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this confined-space scenario, entry permits, standby personnel, and rescue planning control who may enter and ensure emergency readiness if conditions change."
+        },
+        {
+          "control_text": "Isolate and ventilate the confined space before entry",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary_or_supporting",
+          "priority": "high",
+          "supporting_event_statement_template": "In this confined-space scenario, isolation and ventilation reduce exposure to hazardous energy, contaminants, or oxygen-deficient atmospheres before entry."
+        }
+      ]
+    },
+    {
+      "pathway_id": "mechanical_energy_isolation",
+      "priority": 88,
+      "preferred_risk": "Energy release (excl. Electrical)",
+      "confidence": "high",
+      "include_any": [
+        "unexpectedly started",
+        "unexpected start",
+        "equipment started",
+        "isolation was not correctly applied",
+        "not isolated",
+        "without isolation",
+        "lockout",
+        "tagout",
+        "conveyor",
+        "crusher",
+        "blockage",
+        "clearing material",
+        "hands were near",
+        "crushing point",
+        "moving parts",
+        "stored energy",
+        "maintenance",
+        "jammed",
+        "unguarded moving"
+      ],
+      "exclude_any": [],
+      "hazard_factors": [
+        "uncontrolled mechanical or stored energy",
+        "maintenance, clearing, or intervention task",
+        "worker exposure to moving, crushing, or rotating equipment"
+      ],
+      "desired_control_functions": [
+        "isolation_access_control",
+        "administrative_procedure",
+        "engineering_environmental_control",
+        "inspection_maintenance",
+        "warning_signage"
+      ],
+      "overall_control_logic_statement": "In this mechanical energy-isolation scenario, one control may isolate and verify zero energy before intervention, another may prevent access to moving parts, and another may control the task through procedure, permit, supervision, and verification.",
+      "taxonomy_preferred_keywords": [
+        "EQUIPMENT",
+        "GUARD",
+        "GUARDING",
+        "INSPECTION",
+        "ISOLATION",
+        "LOCK",
+        "LOCKOUT",
+        "MAINTENANCE",
+        "MANAGEMENT OF ISOLATIONS",
+        "PERMIT",
+        "PERMIT TO WORK",
+        "PLANT",
+        "PTW",
+        "TAGOUT"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Apply and verify isolation before clearing, maintenance, or blockage removal",
+          "control_function": "isolation_access_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this mechanical energy-isolation scenario, the worker was exposed to equipment that could move unexpectedly. Applying and verifying isolation removes the uncontrolled energy pathway before intervention."
+        },
+        {
+          "control_text": "Use lockout/tagout and test-for-dead or try-start verification",
+          "control_function": "administrative_procedure",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this mechanical energy-isolation scenario, lockout/tagout and verification confirm that the equipment cannot restart while the worker is clearing or maintaining it."
+        },
+        {
+          "control_text": "Maintain guarding or physical barriers around moving and crushing points",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary_or_supporting",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this mechanical energy-isolation scenario, guarding or barriers reduce contact with moving parts or crushing points if access control fails."
+        },
+        {
+          "control_text": "Review the procedure and supervision for clearing blockages or intervening with plant",
+          "control_function": "administrative_procedure",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this mechanical energy-isolation scenario, procedures and supervision help ensure workers do not intervene in equipment before isolation and verification are complete."
+        }
+      ],
+      "matching_note": "For mechanical isolation cases, taxonomy categories outside isolation/permit/guarding may still require post-ranking filtering or hybrid fallback."
+    },
+    {
+      "pathway_id": "electrical_energy",
+      "priority": 87,
+      "preferred_risk": "Electrical (incl. Arc Flash/Blast)",
+      "confidence": "high",
+      "include_any": [
+        "electrical",
+        "arc flash",
+        "arc blast",
+        "live cable",
+        "energised",
+        "energized",
+        "switchboard",
+        "electrical panel",
+        "electric shock",
+        "shock",
+        "short circuit",
+        "breaker",
+        "isolation not verified",
+        "test for dead"
+      ],
+      "exclude_any": [],
+      "hazard_factors": [
+        "electrical energy source",
+        "worker exposure to live or potentially live equipment",
+        "arc flash, shock, or electrical fault consequence"
+      ],
+      "desired_control_functions": [
+        "isolation_access_control",
+        "administrative_procedure",
+        "ppe_personal_protection",
+        "inspection_maintenance",
+        "warning_signage"
+      ],
+      "overall_control_logic_statement": "In this electrical energy scenario, one control may isolate and verify the electrical source, another may control access and authorisation, and another may protect workers from shock or arc-flash consequences.",
+      "taxonomy_preferred_keywords": [
+        "ISOLATION",
+        "ELECTRICAL",
+        "ARC",
+        "PPE",
+        "PERMIT",
+        "TEST"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Isolate and verify the electrical source before work continues",
+          "control_function": "isolation_access_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this electrical energy scenario, verification of isolation is required before workers are exposed to live or potentially live components."
+        },
+        {
+          "control_text": "Apply electrical work authorisation, permit, and test-for-dead requirements",
+          "control_function": "administrative_procedure",
+          "control_role": "primary_or_supporting",
+          "priority": "high",
+          "supporting_event_statement_template": "In this electrical energy scenario, authorisation, permits, and test-for-dead steps help prevent work on equipment that remains energised."
+        },
+        {
+          "control_text": "Use appropriate arc-rated PPE and shock protection where exposure remains possible",
+          "control_function": "ppe_personal_protection",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this electrical energy scenario, PPE reduces consequence where arc flash or shock exposure cannot be fully eliminated by isolation alone."
+        }
+      ]
+    },
+    {
+      "pathway_id": "vehicle_pedestrian_interaction",
+      "priority": 85,
+      "preferred_risk": "Vehicles & Mobile Equipment",
+      "confidence": "high",
+      "include_any": [
+        "vehicle reversed",
+        "reversing",
+        "light vehicle",
+        "haul truck",
+        "mobile equipment",
+        "forklift",
+        "loader",
+        "excavator",
+        "dozer",
+        "near miss with pedestrian",
+        "almost struck",
+        "pedestrian",
+        "walking behind",
+        "workshop entrance",
+        "blind spot",
+        "traffic",
+        "collision",
+        "vehicle pedestrian",
+        "mobile plant"
+      ],
+      "exclude_any": [
+        "pit edge",
+        "open pit edge",
+        "unstable edge",
+        "cracks near the edge",
+        "ground failure",
+        "wall failure",
+        "slope failure"
+      ],
+      "hazard_factors": [
+        "moving vehicle or mobile equipment",
+        "pedestrian exposure in a shared movement area",
+        "blind spot, reversing, visibility, or traffic-management issue"
+      ],
+      "desired_control_functions": [
+        "isolation_access_control",
+        "administrative_procedure",
+        "warning_signage",
+        "engineering_environmental_control",
+        "inspection_maintenance"
+      ],
+      "overall_control_logic_statement": "In this vehicle or mobile-equipment scenario, one control may separate pedestrians from moving equipment, another may organise vehicle movement through traffic management rules, and another may improve awareness through warning, visibility, or spotter arrangements.",
+      "taxonomy_preferred_keywords": [
+        "VEHICLE PEDESTRIAN",
+        "TRAFFIC",
+        "DRIVER",
+        "SEGREGATION",
+        "INTERSECTION",
+        "SIGNAGE",
+        "VEHICLE MAINTENANCE"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Separate pedestrians from vehicle movement paths using physical barriers or designated walkways",
+          "control_function": "isolation_access_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this vehicle-pedestrian scenario, the main exposure occurs where a pedestrian and moving vehicle share the same area. Physical separation or designated walkways reduce the likelihood of collision."
+        },
+        {
+          "control_text": "Review traffic management rules for reversing and workshop access areas",
+          "control_function": "administrative_procedure",
+          "control_role": "primary_or_supporting",
+          "priority": "high",
+          "supporting_event_statement_template": "In this vehicle-pedestrian scenario, traffic rules, reversing controls, and access arrangements organise movement and reduce conflict points between vehicles and pedestrians."
+        },
+        {
+          "control_text": "Use spotters, reversing alarms, cameras, or visibility controls where blind spots exist",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary_or_supporting",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this vehicle-pedestrian scenario, reversing or blind-spot exposure can be reduced through spotters, warning devices, cameras, or other visibility controls."
+        },
+        {
+          "control_text": "Install or improve signage and demarcation at vehicle-pedestrian interaction points",
+          "control_function": "warning_signage",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this vehicle-pedestrian scenario, signage and demarcation improve awareness before workers enter reversing, blind-spot, or traffic interaction areas."
+        }
+      ]
+    },
+    {
+      "pathway_id": "lifting_operation",
+      "priority": 85,
+      "preferred_risk": "Lifting",
+      "confidence": "high",
+      "include_any": [
+        "lifting operation",
+        "lifted",
+        "suspended load",
+        "load swung",
+        "swinging load",
+        "sling",
+        "worn sling",
+        "crane",
+        "hoist",
+        "rigging",
+        "lift plan",
+        "dogman",
+        "rigger",
+        "heavy pump component",
+        "inside the lifting area",
+        "lifting area",
+        "lifting plant",
+        "lifting equipment"
+      ],
+      "exclude_any": [
+        "manual handling",
+        "manually lifting",
+        "manual lifting",
+        "manual lift",
+        "manually lifted",
+        "lifting manually",
+        "lifted manually",
+        "strained lower back",
+        "strained back",
+        "back strain",
+        "lower back strain",
+        "sprained back",
+        "ergonomic",
+        "ergonomics",
+        "without mechanical assistance",
+        "without using mechanical assistance",
+        "musculoskeletal",
+        "overexertion",
+        "awkward posture",
+        "repetitive lifting"
+      ],
+      "hazard_factors": [
+        "suspended or moving load",
+        "lifting gear, sling, rigging, or crane control issue",
+        "workers exposed inside the lifting area"
+      ],
+      "desired_control_functions": [
+        "inspection_maintenance",
+        "isolation_access_control",
+        "administrative_procedure",
+        "engineering_environmental_control",
+        "ppe_personal_protection"
+      ],
+      "overall_control_logic_statement": "In this lifting scenario, one control may verify the integrity of lifting gear, another may keep workers outside the suspended-load zone, and another may organise the lift through planning, communication, and competent supervision.",
+      "taxonomy_preferred_keywords": [
+        "BARRICADING",
+        "CRANE",
+        "EQUIP",
+        "EXCLUSION",
+        "LIFT",
+        "LIFTING",
+        "LIFTING EQUIP",
+        "LIFTING EQUIPMENT",
+        "LIFTING PLANT",
+        "RIGGING",
+        "SLING"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Inspect and remove damaged or worn lifting gear before the lift continues",
+          "control_function": "inspection_maintenance",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this lifting scenario, worn or unsuitable lifting gear can fail or allow the load to move unpredictably. Inspection and removal of damaged gear controls the source of the lifting hazard."
+        },
+        {
+          "control_text": "Establish an exclusion zone around the suspended-load path",
+          "control_function": "isolation_access_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this lifting scenario, workers inside the lifting area are exposed to swinging or dropped-load hazards. An exclusion zone keeps people out of the suspended-load path."
+        },
+        {
+          "control_text": "Review the lift plan, communication method, and competent supervision",
+          "control_function": "administrative_procedure",
+          "control_role": "primary_or_supporting",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this lifting scenario, lift planning, communication, and competent supervision help control load movement and coordinate workers around the lifting task."
+        }
+      ]
+    },
+    {
+      "pathway_id": "loss_of_containment_chemical",
+      "priority": 85,
+      "preferred_risk": "Loss of Containment",
+      "secondary_risk": "Acute Chemical Exposure",
+      "confidence": "high",
+      "include_any": [
+        "loss of containment",
+        "hose disconnected",
+        "hose disconnection",
+        "transfer hose",
+        "acid",
+        "chemical",
+        "liquid release",
+        "released liquid",
+        "pumping",
+        "splashing",
+        "splashed",
+        "spill",
+        "leak",
+        "leakage",
+        "containment",
+        "corrosive",
+        "nearby worker"
+      ],
+      "exclude_any": [],
+      "hazard_factors": [
+        "released liquid or chemical from process/transfer equipment",
+        "spread of hazardous material",
+        "worker exposure through splash, contact, or vapour"
+      ],
+      "desired_control_functions": [
+        "hazard_source_control",
+        "engineering_environmental_control",
+        "isolation_access_control",
+        "emergency_response",
+        "ppe_personal_protection",
+        "administrative_procedure"
+      ],
+      "overall_control_logic_statement": "In this loss-of-containment or chemical-exposure scenario, one control may contain the release, another may isolate the source or stop the transfer, another may protect exposed workers with suitable PPE, and another may provide emergency washing or response.",
+      "taxonomy_preferred_keywords": [
+        "SECONDARY CONTAINMENT",
+        "ISOLATION",
+        "ACID",
+        "DIPHOTERINE",
+        "SAFETY SHOWERS",
+        "EYE WASH",
+        "HAZARDOUS MATERIALS PPE"
+      ],
+      "generated_fallback_controls": [
+        {
+          "control_text": "Stop the transfer and isolate the source of the chemical release",
+          "control_function": "hazard_source_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this chemical release scenario, the disconnected hose or transfer failure is the source of containment loss. Stopping the transfer and isolating the source prevents further release."
+        },
+        {
+          "control_text": "Use secondary containment or spill controls to limit the spread of released liquid",
+          "control_function": "engineering_environmental_control",
+          "control_role": "primary",
+          "priority": "high",
+          "supporting_event_statement_template": "In this chemical release scenario, containment or spill controls limit the spread of released liquid and reduce the area where workers may be exposed."
+        },
+        {
+          "control_text": "Use chemical PPE appropriate for the substance and exposure route",
+          "control_function": "ppe_personal_protection",
+          "control_role": "primary_or_supporting",
+          "priority": "high",
+          "supporting_event_statement_template": "In this chemical exposure scenario, suitable chemical PPE reduces worker contact with corrosive or hazardous liquid during transfer, response, or cleanup."
+        },
+        {
+          "control_text": "Verify safety shower, eyewash, and emergency response arrangements",
+          "control_function": "emergency_response",
+          "control_role": "supplementary",
+          "priority": "medium",
+          "supporting_event_statement_template": "In this chemical exposure scenario, emergency washing and response arrangements reduce harm if liquid contacts a worker."
+        }
+      ]
+    }
+  ],
+  "revision_notes": [
+    "Fixed over-triggering of fall_from_height on dropped-object cases by excluding dropped-object keywords from the fall-from-height rule.",
+    "Fixed over-triggering of dropped_object on hot-work/fire cases by removing generic 'landed close/near' triggers and excluding hot-work/fire keywords.",
+    "Raised hot_work_fire priority above dropped_object so welding/sparks/combustible scenarios are routed to Non Process Fire & Explosion.",
+    "Added clearer notes that taxonomy-backed controls may still require review when source categories are broad or incomplete.",
+    {
+      "date": "2026-07-01 10:04:34",
+      "change": "Added manual_handling_ergonomics pathway and added manual-handling exclusion terms to lifting_operation to prevent manual lifting/back-strain cases from being routed as formal lifting operations."
+    }
+  ]
+}
