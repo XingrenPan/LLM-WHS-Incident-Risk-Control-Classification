@@ -7,6 +7,7 @@ The project includes data preparation, model training, inference, definition-gui
 ## Demo Video
 
 The following video demonstrates the Risk Leader system (application level of this project), showcasing how the proposed LLM-based framework processes workplace incident descriptions, identifies potential risk categories, and recommends relevant safety controls.
+
 https://github.com/user-attachments/assets/bc75753b-9352-4198-8a59-92e9b6e1f5ee
 
 ## Features
