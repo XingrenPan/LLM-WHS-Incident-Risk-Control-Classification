@@ -4,12 +4,6 @@ This repository contains the implementation of an LLM-based framework for workpl
 
 The project includes data preparation, model training, inference, definition-guided control scoring, guardrails, evaluation, and a combined FastAPI service. The current implementation uses Llama 3.1 8B Instruct for the main LLM-based workflows and RoBERTa as a conventional transformer baseline.
 
-## Demo Video
-
-The following video, presented by a member of our team, demonstrates the Risk Leader system (the application-level implementation of this project), showcasing how the proposed LLM-based framework processes workplace incident descriptions, identifies potential risk categories, and recommends relevant safety controls.
-
-https://github.com/user-attachments/assets/bc75753b-9352-4198-8a59-92e9b6e1f5ee
-
 ## Features
 
 - 23-class WHS Risk Category classification
